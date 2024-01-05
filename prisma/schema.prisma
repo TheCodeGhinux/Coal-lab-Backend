@@ -9,3 +9,194 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  userID          String  @id @unique @map("userID")
+  email           String  @unique
+  password        String
+  bio             String?
+  profileImage    String?
+  coverImage      String?
+  googleAccountID String?
+  displayName     String?
+  firstName       String?
+  lastName        String?
+  Role            Roles   @default(User)
+  slug            String  @unique
+  otp_enabled     Boolean @default(false)
+  otp_verified    Boolean @default(false)
+  isVerified      Boolean @default(false)
+
+  Template                Template[]
+  Payment                 Payment[]
+  SocialLink              SocialLink[]
+  OTP                     OTP[]
+  PasswordReset           PasswordReset[]
+  PrivacySetting          PrivacySetting[]
+  UserSupportTicket       UserSupportTicket[]
+  CreatorVerification     CreatorVerification[]
+  Notification            Notification[]
+  NotificationPreferences NotificationPreferences[]
+}
+
+model Template {
+  templateID        String              @id @unique @map("templateID")
+  title             String
+  description       String
+  fileSize          Float               @default(0)
+  createdAt         DateTime            @default(now()) @map("createdAt")
+  lastUpdate        DateTime            @default(now()) @map("lastUpdate")
+  comments          Comment[]
+  compactibility    Compactibility
+  ratings           Rating[]
+  isPublic          Boolean             @default(false)
+  slug              String              @unique
+  creator           User                @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID        String
+  Page              Page[]
+  TemplateAnalytics TemplateAnalytics[]
+  Color             Color[]
+  Payment           Payment[]
+}
+
+model Page {
+  pageID             String   @id @unique @map("pageID")
+  title              String
+  image              String[]
+  template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  templateTemplateID String
+}
+
+model TemplateAnalytics {
+  id                 String   @id @unique @map("id")
+  templateID         String   @unique
+  downloads          Int
+  viewCount          Int
+  revenue            Int
+  template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  templateTemplateID String
+}
+
+model Color {
+  colorID            String   @id @unique @map("colorID")
+  hexCode            String
+  template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  templateTemplateID String
+}
+
+model Comment {
+  commentID          String   @id @unique @map("commentID")
+  message            String
+  Template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  templateTemplateID String
+}
+
+model Rating {
+  ratingID           String   @id @unique @map("ratingID")
+  value              Float
+  Template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  templateTemplateID String
+}
+
+model Payment {
+  paymentID          String   @id @unique @map("paymentID")
+  amount             Float
+  user               User     @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  template           Template @relation(fields: [templateTemplateID], references: [templateID], onDelete: Cascade)
+  transactionDate    DateTime @default(now()) @map("transactionDate")
+  userUserID         String
+  templateTemplateID String
+}
+
+model SocialLink {
+  LinkID       String @id @unique @map("LinkID")
+  websiteURL   String
+  twitterURL   String
+  githubURL    String
+  instagramURL String
+  user         User   @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID   String
+}
+
+model OTP {
+  otpID      String   @id @unique @map("otpID")
+  code       String
+  createdAt  DateTime @default(now()) @map("createdAt")
+  user       User     @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID String
+}
+
+model PasswordReset {
+  id              String   @id @unique @map("id")
+  resetCode       String
+  expiryTimeStamp DateTime
+  status          Boolean  @default(false)
+  user            User     @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID      String
+}
+
+model PrivacySetting {
+  id         String  @id @unique @map("id")
+  isPublic   Boolean @default(true)
+  user       User    @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID String
+}
+
+model Security {
+  securityID String @id @unique @map("securityID")
+}
+
+model UserSupportTicket {
+  ticketID         String  @id @unique @map("ticketID")
+  user             User    @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  issueDescription String
+  active           Boolean @default(true)
+  userUserID       String
+}
+
+model CreatorVerification {
+  verificationID String  @id @unique @map("verificationID")
+  status         Boolean @default(false)
+  creator        User    @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  userUserID     String
+}
+
+model Notification {
+  id         String           @id @unique @map("id")
+  user       User             @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  type       NotificationType
+  message    String
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now()) @map("createdAt")
+  users      String[]
+  userUserID String
+}
+
+model NotificationPreferences {
+  ID         String           @id @unique @map("ID")
+  user       User             @relation(fields: [userUserID], references: [userID], onDelete: Cascade)
+  type       NotificationType
+  push       Boolean          @default(true)
+  email      Boolean          @default(false)
+  createdAt  DateTime         @default(now()) @map("createdAt")
+  userUserID String
+}
+
+enum Roles {
+  Admin
+  User
+  Creator
+}
+
+enum Compactibility {
+  Figma
+  Framer
+  WordPress
+}
+
+enum NotificationType {
+  TEMPLATE_UPDATE
+  TEMPLATE_DOWNLOADED
+  TEMPLATE_REMOVED
+  TEMPLATE_INTERACTION
+}
