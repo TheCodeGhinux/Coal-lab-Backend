@@ -6,12 +6,13 @@ import { errorHandler } from "./middlewares/index";
 import session from "express-session";
 // import passport from "./utils/passport";
 import deleteExpiredTokens from "./utils/deletetoken";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import morgan from "morgan";
 import https from "https";
 import cron from "node-cron";
 import { Server, createServer } from "http";
 import cookieParser from "cookie-parser";
+import generateSecretKey from "./services/generateSecretKey";
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerOptions = require("./swagger");
@@ -63,27 +64,28 @@ app.use(cookieParser());
 
 //serve all routes dynamically using readdirsync
 readdirSync("./src/routes").map((path) => {
+  //   app.use("/api/v1/", require(`./routes/${path}`));
   if (!path.includes("auth")) {
-    // app.use("/api/v1/", authenticateJWT, require(`./routes/${path}`));
+    //   app.use("/api/v1/", authenticateJWT, require(`./routes/${path}`));
     app.use("/api/v1/", require(`./routes/${path}`));
   } else {
     app.use("/api/v1/", require(`./routes/${path}`));
   }
 });
+
 app.get("/", sayHelloController);
 app.use(errorHandler);
 const port = process.env.PORT || 3000;
 
 const httpServer = createServer(app);
 
-const io = new Server(httpServer, {
-  /* options */
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-    credentials: false,
-  },
-});
+const corsOptions: CorsOptions = {
+  origin: "*",
+  methods: ["GET", "POST"],
+  credentials: false,
+};
+
+app.use(cors(corsOptions));
 // app.use(pgNotify(io));
 
 httpServer.listen(port, () => {
